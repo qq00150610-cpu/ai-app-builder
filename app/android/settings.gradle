@@ -1,0 +1,3 @@
+rootProject.name = 'AIAppBuilder'
+include ':app'
+includeBuild('/opt/ai-app-builder/app/node_modules/@react-native/gradle-plugin')

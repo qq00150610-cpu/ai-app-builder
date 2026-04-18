@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -28,6 +29,13 @@ const limiter = rateLimit({
   max: 100
 });
 app.use('/api/', limiter);
+
+// 静态文件服务
+app.use(express.static(path.join(__dirname, '../public'), {
+  setHeaders: (res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  }
+}));
 
 // 路由
 app.use('/', indexRoutes);

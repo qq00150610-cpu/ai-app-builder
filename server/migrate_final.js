@@ -10,7 +10,7 @@ async function migrate() {
   // 尝试多种连接方式
   const options = [
     { host: '127.0.0.1', port: 3306, user: 'root', password: '', database: 'ai_app_builder' },
-    { host: '127.0.0.1', port: 3306, user: 'root', password: 'mm900236..', database: 'ai_app_builder' },
+    { host: '127.0.0.1', port: 3306, user: 'root', password: 'Root@123456', database: 'ai_app_builder' },
   ];
   
   let conn = null;
