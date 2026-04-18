@@ -10,6 +10,7 @@ const aiRoutes = require('./routes/ai');
 const buildRoutes = require('./routes/build');
 const paymentRoutes = require('./routes/payment');
 const templateRoutes = require('./routes/template');
+const indexRoutes = require('./routes/index');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -27,6 +28,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // 路由
+app.use('/', indexRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/project', projectRoutes);
