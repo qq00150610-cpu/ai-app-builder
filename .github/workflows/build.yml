@@ -73,18 +73,38 @@ jobs:
         }
         EOF
 
-        # build.gradle (project)
+        # build.gradle (project) - 简化版，不使用allprojects
         cat > android/build.gradle << 'EOF'
-        buildscript {
-            repositories { google(); mavenCentral() }
-            dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+        plugins {
+            id 'com.android.application' version '8.2.0' apply false
         }
-        allprojects { repositories { google(); mavenCentral() } }
+        EOF
+
+        # settings.gradle - 集中管理仓库
+        cat > android/settings.gradle << 'EOF'
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "AIAppBuilder"
+        include ':app'
         EOF
 
         # build.gradle (app)
         cat > android/app/build.gradle << 'EOF'
-        apply plugin: 'com.android.application'
+        plugins {
+            id 'com.android.application'
+        }
         android {
             namespace 'com.aiapp.builder'
             compileSdk 34
@@ -102,14 +122,6 @@ jobs:
             implementation 'androidx.appcompat:appcompat:1.6.1'
             implementation 'com.google.android.material:material:1.11.0'
         }
-        EOF
-
-        # settings.gradle
-        cat > android/settings.gradle << 'EOF'
-        pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-        dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-        rootProject.name = "AIAppBuilder"
-        include ':app'
         EOF
 
         # gradle.properties
