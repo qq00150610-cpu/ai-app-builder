@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2/promise');
-const { getDB } = require('../config/database');
 
 /**
  * 执行数据库迁移
@@ -10,14 +9,41 @@ const { getDB } = require('../config/database');
 router.get('/email-fields', async (req, res) => {
   let connection;
   try {
-    // 直接使用空密码连接（根据.env配置）
-    connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      port: process.env.DB_PORT || 3306,
-      user: 'root',
-      password: process.env.DB_PASSWORD || '',
-      database: process.env.DB_NAME || 'ai_app_builder'
-    });
+    // 尝试多种连接方式
+    const connectionOptions = [
+      // TCP连接
+      {
+        host: '127.0.0.1',
+        port: 3306,
+        user: 'root',
+        password: '',
+        database: 'ai_app_builder'
+      },
+      {
+        host: '127.0.0.1',
+        port: 3306,
+        user: 'root',
+        password: 'mm900236..',
+        database: 'ai_app_builder'
+      }
+    ];
+    
+    let connected = false;
+    for (const opts of connectionOptions) {
+      try {
+        connection = await mysql.createConnection(opts);
+        await connection.query('SELECT 1');
+        console.log('Connected to MySQL with options:', { host: opts.host, user: opts.user, password: opts.password ? '***' : '' });
+        connected = true;
+        break;
+      } catch (e) {
+        console.log('Connection attempt failed:', e.message);
+      }
+    }
+    
+    if (!connected) {
+      return res.status(500).json({ success: false, message: '无法连接到MySQL数据库' });
+    }
     
     console.log('开始数据库迁移...');
     
@@ -26,10 +52,7 @@ router.get('/email-fields', async (req, res) => {
       await connection.query('ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE COMMENT "用户名" AFTER phone');
       console.log('✓ 添加 username 字段成功');
     } catch (e) {
-      if (e.code === 'ER_DUP_FIELDNAME') {
-        console.log('- username 字段已存在');
-      } else if (e.code === 'ER_BAD_FIELD_ERROR') {
-        // 字段可能已存在，忽略错误
+      if (e.code === 'ER_DUP_FIELDNAME' || e.code === 'ER_BAD_FIELD_ERROR') {
         console.log('- username 字段已存在');
       } else {
         throw e;
