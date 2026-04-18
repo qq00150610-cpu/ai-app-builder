@@ -18,6 +18,7 @@ export default function HomeScreen() {
     { icon: '🤖', title: 'AI生成', desc: '自然语言生成应用', screen: 'Editor', params: { mode: 'ai' } },
     { icon: '📝', title: '可视化编辑', desc: '拖拽式编辑器', screen: 'Editor', params: { mode: 'edit' } },
     { icon: '📦', title: '模板中心', desc: '快速创建应用', screen: 'Editor', params: { mode: 'template' } },
+    { icon: '📥', title: '项目导入', desc: '上传现有项目', screen: 'Import' },
     { icon: '⚙️', title: 'AI配置', desc: '配置你的AI模型', screen: 'AISettings' },
   ];
 
@@ -86,6 +87,13 @@ export default function HomeScreen() {
             <View style={styles.featureText}>
               <Text style={styles.featureTitle}>云端编译</Text>
               <Text style={styles.featureDesc}>不占手机资源，一键生成APK</Text>
+            </View>
+          </View>
+          <View style={styles.featureItem}>
+            <Text style={styles.featureIcon}>📥</Text>
+            <View style={styles.featureText}>
+              <Text style={styles.featureTitle}>项目导入</Text>
+              <Text style={styles.featureDesc}>支持导入现有项目，AI帮你查错优化</Text>
             </View>
           </View>
         </View>

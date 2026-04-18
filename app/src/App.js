@@ -13,6 +13,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import MembershipScreen from './screens/MembershipScreen';
 import AISettingsScreen from './screens/AISettingsScreen';
 import BuildHistoryScreen from './screens/BuildHistoryScreen';
+import ImportScreen from './screens/ImportScreen';
 
 // Store
 import { useUserStore } from './services/store';
@@ -40,10 +41,31 @@ function App() {
           {token ? (
             <>
               <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-              <Stack.Screen name="Editor" component={EditorScreen} options={{ title: '编辑器' }} />
-              <Stack.Screen name="Membership" component={MembershipScreen} options={{ title: '会员中心' }} />
-              <Stack.Screen name="AISettings" component={AISettingsScreen} options={{ title: 'AI配置' }} />
-              <Stack.Screen name="BuildHistory" component={BuildHistoryScreen} options={{ title: '构建记录' }} />
+              <Stack.Screen 
+                name="Editor" 
+                component={EditorScreen} 
+                options={{ title: '编辑器' }} 
+              />
+              <Stack.Screen 
+                name="Import" 
+                component={ImportScreen} 
+                options={{ title: '导入项目' }} 
+              />
+              <Stack.Screen 
+                name="Membership" 
+                component={MembershipScreen} 
+                options={{ title: '会员中心' }} 
+              />
+              <Stack.Screen 
+                name="AISettings" 
+                component={AISettingsScreen} 
+                options={{ title: 'AI配置' }} 
+              />
+              <Stack.Screen 
+                name="BuildHistory" 
+                component={BuildHistoryScreen} 
+                options={{ title: '构建记录' }} 
+              />
             </>
           ) : (
             <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
