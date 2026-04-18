@@ -1,0 +1,159 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Create Android project
+      run: |
+        mkdir -p android/app/src/main/java/com/aiapp/builder
+        mkdir -p android/app/src/main/res/values
+        mkdir -p android/gradle/wrapper
+
+        # AndroidManifest.xml
+        cat > android/app/src/main/AndroidManifest.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.aiapp.builder">
+            <uses-permission android:name="android.permission.INTERNET"/>
+            <application android:label="AI应用开发平台" android:allowBackup="true" android:supportsRtl="true">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # MainActivity.java
+        cat > android/app/src/main/java/com/aiapp/builder/MainActivity.java << 'EOF'
+        package com.aiapp.builder;
+        import android.os.Bundle;
+        import android.webkit.WebView;
+        import android.webkit.WebViewClient;
+        import android.widget.LinearLayout;
+        import android.view.ViewGroup;
+        import androidx.appcompat.app.AppCompatActivity;
+        public class MainActivity extends AppCompatActivity {
+            private WebView webView;
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                LinearLayout layout = new LinearLayout(this);
+                layout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                webView = new WebView(this);
+                webView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.getSettings().setDomStorageEnabled(true);
+                webView.setWebViewClient(new WebViewClient());
+                webView.loadUrl("http://47.92.220.102:3000");
+                layout.addView(webView);
+                setContentView(layout);
+            }
+            @Override
+            public void onBackPressed() {
+                if (webView != null && webView.canGoBack()) webView.goBack();
+                else super.onBackPressed();
+            }
+        }
+        EOF
+
+        # build.gradle (project)
+        cat > android/build.gradle << 'EOF'
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+        }
+        allprojects { repositories { google(); mavenCentral() } }
+        EOF
+
+        # build.gradle (app)
+        cat > android/app/build.gradle << 'EOF'
+        apply plugin: 'com.android.application'
+        android {
+            namespace 'com.aiapp.builder'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.aiapp.builder"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0.0"
+            }
+            buildTypes { release { minifyEnabled false } }
+            compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+        }
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+        }
+        EOF
+
+        # settings.gradle
+        cat > android/settings.gradle << 'EOF'
+        pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+        dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+        rootProject.name = "AIAppBuilder"
+        include ':app'
+        EOF
+
+        # gradle.properties
+        cat > android/gradle.properties << 'EOF'
+        org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+        android.useAndroidX=true
+        android.nonTransitiveRClass=true
+        EOF
+
+        # styles.xml
+        cat > android/app/src/main/res/values/styles.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
+                <item name="colorPrimary">#007AFF</item>
+            </style>
+        </resources>
+        EOF
+
+        touch android/app/proguard-rules.pro
+
+    - name: Setup Gradle Wrapper
+      working-directory: android
+      run: |
+        cat > gradlew << 'GRADLEW'
+        #!/bin/sh
+        exec java -classpath "$(dirname "$0")/gradle/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"
+        GRADLEW
+        chmod +x gradlew
+        
+        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+        EOF
+        
+        curl -sL https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
+
+    - name: Build APK
+      working-directory: android
+      run: ./gradlew assembleDebug --no-daemon || ./gradlew assembleDebug --no-daemon --stacktrace
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: ai-app-builder-apk
+        path: android/app/build/outputs/apk/debug/*.apk
