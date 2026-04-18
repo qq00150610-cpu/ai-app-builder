@@ -25,62 +25,170 @@ jobs:
       run: |
         mkdir -p android/app/src/main/java/com/aiapp/builder
         mkdir -p android/app/src/main/res/values
+        mkdir -p android/app/src/main/res/xml
         mkdir -p android/gradle/wrapper
 
-        # AndroidManifest.xml
+        # AndroidManifest.xml - 添加必要的权限和配置
         cat > android/app/src/main/AndroidManifest.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.aiapp.builder">
             <uses-permission android:name="android.permission.INTERNET"/>
-            <application android:label="AI应用开发平台" android:allowBackup="true" android:supportsRtl="true">
-                <activity android:name=".MainActivity" android:exported="true">
-                    <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+            <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+            
+            <application 
+                android:label="AI应用开发平台" 
+                android:allowBackup="true" 
+                android:supportsRtl="true"
+                android:usesCleartextTraffic="true"
+                android:networkSecurityConfig="@xml/network_security_config"
+                android:theme="@style/AppTheme">
+                
+                <activity 
+                    android:name=".MainActivity" 
+                    android:exported="true"
+                    android:configChanges="orientation|screenSize|keyboardHidden">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN"/>
+                        <category android:name="android.intent.category.LAUNCHER"/>
+                    </intent-filter>
                 </activity>
             </application>
         </manifest>
         EOF
 
-        # MainActivity.java
+        # 网络安全配置 - 允许HTTP请求
+        cat > android/app/src/main/res/xml/network_security_config.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <network-security-config>
+            <base-config cleartextTrafficPermitted="true">
+                <trust-anchors>
+                    <certificates src="system"/>
+                </trust-anchors>
+            </base-config>
+        </network-security-config>
+        EOF
+
+        # MainActivity.java - 完整的WebView应用
         cat > android/app/src/main/java/com/aiapp/builder/MainActivity.java << 'EOF'
         package com.aiapp.builder;
+        
         import android.os.Bundle;
         import android.webkit.WebView;
         import android.webkit.WebViewClient;
+        import android.webkit.WebSettings;
         import android.widget.LinearLayout;
         import android.view.ViewGroup;
+        import android.view.View;
+        import android.widget.ProgressBar;
+        import android.graphics.Color;
         import androidx.appcompat.app.AppCompatActivity;
+        
         public class MainActivity extends AppCompatActivity {
             private WebView webView;
+            private ProgressBar progressBar;
+            
             @Override
             protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
+                
+                // 创建布局
                 LinearLayout layout = new LinearLayout(this);
-                layout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                ));
+                layout.setBackgroundColor(Color.WHITE);
+                
+                // 进度条
+                progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+                progressBar.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 
+                    10
+                ));
+                progressBar.setMax(100);
+                progressBar.setProgress(0);
+                
+                // WebView
                 webView = new WebView(this);
-                webView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                webView.getSettings().setJavaScriptEnabled(true);
-                webView.getSettings().setDomStorageEnabled(true);
-                webView.setWebViewClient(new WebViewClient());
-                webView.loadUrl("http://47.92.220.102:3000");
+                webView.setLayoutParams(new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, 
+                    ViewGroup.LayoutParams.MATCH_PARENT, 
+                    1.0f
+                ));
+                
+                // 配置WebView
+                WebSettings settings = webView.getSettings();
+                settings.setJavaScriptEnabled(true);
+                settings.setDomStorageEnabled(true);
+                settings.setDatabaseEnabled(true);
+                settings.setAllowFileAccess(true);
+                settings.setAllowContentAccess(true);
+                settings.setLoadWithOverviewMode(true);
+                settings.setUseWideViewPort(true);
+                settings.setSupportZoom(true);
+                settings.setBuiltInZoomControls(false);
+                settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+                settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                
+                // 设置WebViewClient
+                webView.setWebViewClient(new WebViewClient() {
+                    @Override
+                    public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                        super.onPageStarted(view, url, favicon);
+                        progressBar.setVisibility(View.VISIBLE);
+                    }
+                    
+                    @Override
+                    public void onPageFinished(WebView view, String url) {
+                        super.onPageFinished(view, url);
+                        progressBar.setVisibility(View.GONE);
+                    }
+                    
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                        view.loadUrl(url);
+                        return true;
+                    }
+                });
+                
+                // 设置WebChromeClient支持进度
+                webView.setWebChromeClient(new android.webkit.WebChromeClient() {
+                    @Override
+                    public void onProgressChanged(WebView view, int newProgress) {
+                        progressBar.setProgress(newProgress);
+                    }
+                });
+                
+                // 加载服务器地址
+                String serverUrl = "http://47.92.220.102:3000";
+                webView.loadUrl(serverUrl);
+                
+                layout.addView(progressBar);
                 layout.addView(webView);
                 setContentView(layout);
             }
+            
             @Override
             public void onBackPressed() {
-                if (webView != null && webView.canGoBack()) webView.goBack();
-                else super.onBackPressed();
+                if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    super.onBackPressed();
+                }
             }
         }
         EOF
 
-        # build.gradle (project) - 简化版，不使用allprojects
+        # build.gradle (project)
         cat > android/build.gradle << 'EOF'
         plugins {
             id 'com.android.application' version '8.2.0' apply false
         }
         EOF
 
-        # settings.gradle - 集中管理仓库
+        # settings.gradle
         cat > android/settings.gradle << 'EOF'
         pluginManagement {
             repositories {
@@ -115,12 +223,25 @@ jobs:
                 versionCode 1
                 versionName "1.0.0"
             }
-            buildTypes { release { minifyEnabled false } }
-            compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+            buildTypes { 
+                release { 
+                    minifyEnabled false 
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+                debug {
+                    minifyEnabled false
+                    debuggable true
+                }
+            }
+            compileOptions { 
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17 
+            }
         }
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.6.1'
             implementation 'com.google.android.material:material:1.11.0'
+            implementation 'androidx.webkit:webkit:1.8.0'
         }
         EOF
 
@@ -137,7 +258,20 @@ jobs:
         <resources>
             <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
                 <item name="colorPrimary">#007AFF</item>
+                <item name="colorPrimaryDark">#0056b3</item>
+                <item name="colorAccent">#007AFF</item>
+                <item name="android:windowBackground">@android:color/white</item>
             </style>
+        </resources>
+        EOF
+
+        # colors.xml
+        cat > android/app/src/main/res/values/colors.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <color name="primary">#007AFF</color>
+            <color name="primary_dark">#0056b3</color>
+            <color name="white">#FFFFFF</color>
         </resources>
         EOF
 
@@ -160,9 +294,9 @@ jobs:
         
         curl -sL https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar -o gradle/wrapper/gradle-wrapper.jar
 
-    - name: Build APK
+    - name: Build Debug APK
       working-directory: android
-      run: ./gradlew assembleDebug --no-daemon || ./gradlew assembleDebug --no-daemon --stacktrace
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
