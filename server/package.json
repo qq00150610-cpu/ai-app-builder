@@ -20,7 +20,8 @@
     "uuid": "^9.0.1",
     "ali-oss": "^6.18.1",
     "archiver": "^6.0.1",
-    "express-rate-limit": "^7.1.5"
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
