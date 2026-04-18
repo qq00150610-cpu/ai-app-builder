@@ -7,6 +7,9 @@ USE ai_app_builder;
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     phone VARCHAR(20) UNIQUE,
+    username VARCHAR(50) UNIQUE COMMENT '用户名',
+    email VARCHAR(100) UNIQUE COMMENT '邮箱',
+    password VARCHAR(255) COMMENT '密码（bcrypt加密）',
     wechat_openid VARCHAR(64) UNIQUE,
     nickname VARCHAR(50),
     avatar VARCHAR(255),
@@ -15,7 +18,9 @@ CREATE TABLE IF NOT EXISTS users (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_phone (phone),
-    INDEX idx_openid (wechat_openid)
+    INDEX idx_openid (wechat_openid),
+    INDEX idx_email (email),
+    INDEX idx_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
 
 -- 用户AI配置表
@@ -111,3 +116,8 @@ CREATE TABLE IF NOT EXISTS templates (
     INDEX idx_category (category),
     INDEX idx_public (is_public)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='模板表';
+
+-- 为已存在的表添加新字段（如果表已存在）
+-- ALTER TABLE users ADD COLUMN username VARCHAR(50) UNIQUE COMMENT '用户名';
+-- ALTER TABLE users ADD COLUMN email VARCHAR(100) UNIQUE COMMENT '邮箱';
+-- ALTER TABLE users ADD COLUMN password VARCHAR(255) COMMENT '密码';

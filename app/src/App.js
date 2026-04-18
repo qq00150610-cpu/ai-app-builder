@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Screens
 import LoginScreen from './screens/LoginScreen';
+import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import EditorScreen from './screens/EditorScreen';
 import ProjectsScreen from './screens/ProjectsScreen';
@@ -68,7 +69,18 @@ function App() {
               />
             </>
           ) : (
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+              <Stack.Screen 
+                name="Register" 
+                component={RegisterScreen} 
+                options={{ 
+                  headerShown: true,
+                  title: '注册',
+                  headerBackTitle: '返回',
+                }} 
+              />
+            </>
           )}
         </Stack.Navigator>
       </NavigationContainer>

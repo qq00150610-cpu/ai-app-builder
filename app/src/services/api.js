@@ -35,9 +35,26 @@ api.interceptors.response.use(
 
 // 认证API
 export const authAPI = {
+  // 手机号验证码登录
   sendCode: (phone) => api.post('/auth/send-code', { phone }),
   login: (phone, code) => api.post('/auth/login', { phone, code }),
+  
+  // 邮箱登录
+  emailLogin: (email, password) => api.post('/auth/email-login', { email, password }),
+  
+  // 邮箱注册
+  register: (data) => api.post('/auth/register', data),
+  verifyRegister: (email, code) => api.post('/auth/verify-register', { email, code }),
+  resendCode: (email) => api.post('/auth/resend-code', { email }),
+  
+  // 微信登录
   wechatLogin: (code) => api.post('/auth/wechat-login', { code }),
+  
+  // 刷新Token
+  refreshToken: () => api.post('/auth/refresh'),
+  
+  // 退出登录
+  logout: () => api.post('/auth/logout'),
 };
 
 // 用户API
