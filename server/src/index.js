@@ -11,6 +11,7 @@ const buildRoutes = require('./routes/build');
 const paymentRoutes = require('./routes/payment');
 const templateRoutes = require('./routes/template');
 const uploadRoutes = require('./routes/upload');
+const migrateRoutes = require('./routes/migrate');
 const indexRoutes = require('./routes/index');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -38,6 +39,7 @@ app.use('/api/build', buildRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/template', templateRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/migrate', migrateRoutes);
 
 // 健康检查
 app.get('/health', (req, res) => {
