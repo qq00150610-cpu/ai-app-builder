@@ -40,7 +40,7 @@ export default function LoginScreen({ navigation }) {
       if (res.success || res.dev_code) {
         // 开发环境显示验证码
         if (res.dev_code) {
-          Alert.alert('开发模式', `验证码: ${res.dev_code}`);
+          Alert.alert('开发模式', '验证码: ' + res.dev_code);
         }
         setStep('code');
         setCountdown(60);
@@ -113,27 +113,38 @@ export default function LoginScreen({ navigation }) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <Text style={styles.title}>AI应用开发平台</Text>
-          <Text style={styles.subtitle}>手机端一站式开发工具</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* 顶部渐变背景 */}
+        <View style={styles.headerGradient}>
+          <View style={styles.header}>
+            <View style={styles.logoContainer}>
+              <Text style={styles.logo}>🤖</Text>
+            </View>
+            <Text style={styles.title}>AI应用开发平台</Text>
+            <Text style={styles.subtitle}>手机端一站式开发工具</Text>
+          </View>
+        </View>
 
+        {/* 登录表单 */}
+        <View style={styles.formContainer}>
           {/* 登录方式切换 */}
           <View style={styles.methodTabs}>
             <TouchableOpacity
               style={[styles.tab, loginMethod === 'phone' && styles.tabActive]}
               onPress={() => setLoginMethod('phone')}
+              activeOpacity={0.8}
             >
               <Text style={[styles.tabText, loginMethod === 'phone' && styles.tabTextActive]}>
-                手机号登录
+                📱 手机号登录
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.tab, loginMethod === 'email' && styles.tabActive]}
               onPress={() => setLoginMethod('email')}
+              activeOpacity={0.8}
             >
               <Text style={[styles.tabText, loginMethod === 'email' && styles.tabTextActive]}>
-                邮箱登录
+                ✉️ 邮箱登录
               </Text>
             </TouchableOpacity>
           </View>
@@ -142,18 +153,23 @@ export default function LoginScreen({ navigation }) {
             // 手机号登录
             step === 'phone' ? (
               <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="请输入手机号"
-                  keyboardType="phone-pad"
-                  maxLength={11}
-                  value={phone}
-                  onChangeText={setPhone}
-                />
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>手机号</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder=请输入11位手机号
+                    keyboardType=phone-pad
+                    maxLength={11}
+                    value={phone}
+                    onChangeText={setPhone}
+                    placeholderTextColor=#ccc
+                  />
+                </View>
                 <TouchableOpacity
                   style={[styles.button, loading && styles.buttonDisabled]}
                   onPress={sendCode}
                   disabled={loading}
+                  activeOpacity={0.8}
                 >
                   <Text style={styles.buttonText}>
                     {loading ? '发送中...' : '获取验证码'}
@@ -162,19 +178,26 @@ export default function LoginScreen({ navigation }) {
               </>
             ) : (
               <>
-                <Text style={styles.hint}>验证码已发送至 {phone}</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="请输入验证码"
-                  keyboardType="number-pad"
-                  maxLength={6}
-                  value={code}
-                  onChangeText={setCode}
-                />
+                <View style={styles.hintContainer}>
+                  <Text style={styles.hintText}>验证码已发送至 {phone}</Text>
+                </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>验证码</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder=请输入6位验证码
+                    keyboardType=number-pad
+                    maxLength={6}
+                    value={code}
+                    onChangeText={setCode}
+                    placeholderTextColor=#ccc
+                  />
+                </View>
                 <TouchableOpacity
                   style={[styles.button, loading && styles.buttonDisabled]}
                   onPress={phoneLogin}
                   disabled={loading}
+                  activeOpacity={0.8}
                 >
                   <Text style={styles.buttonText}>
                     {loading ? '登录中...' : '登录'}
@@ -184,41 +207,52 @@ export default function LoginScreen({ navigation }) {
                   style={styles.resend}
                   onPress={sendCode}
                   disabled={countdown > 0 || loading}
+                  activeOpacity={0.8}
                 >
                   <Text style={countdown > 0 ? styles.resendDisabled : styles.resendText}>
-                    {countdown > 0 ? `${countdown}秒后重发` : '重新发送验证码'}
+                    {countdown > 0 ? '重新发送 (' + countdown + 's)' : '重新发送验证码'}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.backBtn}
                   onPress={() => setStep('phone')}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.backText}>返回重新输入手机号</Text>
+                  <Text style={styles.backText}>← 返回重新输入手机号</Text>
                 </TouchableOpacity>
               </>
             )
           ) : (
             // 邮箱登录
             <>
-              <TextInput
-                style={styles.input}
-                placeholder="请输入邮箱"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="请输入密码"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>邮箱</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=请输入邮箱地址
+                  keyboardType=email-address
+                  autoCapitalize=none
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholderTextColor=#ccc
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>密码</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder=请输入密码
+                  secureTextEntry
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholderTextColor=#ccc
+                />
+              </View>
               <TouchableOpacity
                 style={[styles.button, loading && styles.buttonDisabled]}
                 onPress={emailLogin}
                 disabled={loading}
+                activeOpacity={0.8}
               >
                 <Text style={styles.buttonText}>
                   {loading ? '登录中...' : '登录'}
@@ -230,8 +264,8 @@ export default function LoginScreen({ navigation }) {
           {/* 注册链接 */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>还没有账号？</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.linkText}>立即注册</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')} activeOpacity={0.8}>
+              <Text style={styles.linkText}>立即注册 →</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -243,87 +277,129 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FE',
   },
   scrollContent: {
     flexGrow: 1,
   },
-  content: {
-    flex: 1,
+  headerGradient: {
+    backgroundColor: '#667eea',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+  },
+  logoContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    marginBottom: 20,
+  },
+  logo: {
+    fontSize: 40,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
-    textAlign: 'center',
+    color: '#fff',
     marginBottom: 8,
-    color: '#333',
   },
   subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 40,
-    color: '#999',
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  formContainer: {
+    padding: 24,
+    paddingTop: 30,
   },
   methodTabs: {
     flexDirection: 'row',
     marginBottom: 24,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   tab: {
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: 6,
+    borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    backgroundColor: '#667eea',
   },
   tabText: {
     fontSize: 14,
     color: '#666',
+    fontWeight: '500',
   },
   tabTextActive: {
-    color: '#007AFF',
+    color: '#fff',
     fontWeight: '600',
   },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
   input: {
-    height: 50,
+    height: 52,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: '#E8E8E8',
+    borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 16,
-    marginBottom: 16,
     backgroundColor: '#fff',
+    color: '#333',
   },
   button: {
-    height: 50,
-    backgroundColor: '#007AFF',
-    borderRadius: 8,
+    height: 52,
+    backgroundColor: '#667eea',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 8,
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonDisabled: {
     backgroundColor: '#ccc',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
-  hint: {
-    fontSize: 14,
-    color: '#666',
+  hintContainer: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 16,
+  },
+  hintText: {
+    fontSize: 14,
+    color: '#667eea',
     textAlign: 'center',
   },
   resend: {
@@ -331,8 +407,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resendText: {
-    color: '#007AFF',
+    color: '#667eea',
     fontSize: 14,
+    fontWeight: '500',
   },
   resendDisabled: {
     color: '#ccc',
@@ -343,21 +420,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backText: {
-    color: '#666',
+    color: '#999',
     fontSize: 14,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 32,
   },
   footerText: {
     color: '#999',
     fontSize: 14,
   },
   linkText: {
-    color: '#007AFF',
+    color: '#667eea',
     fontSize: 14,
     fontWeight: '600',
     marginLeft: 4,

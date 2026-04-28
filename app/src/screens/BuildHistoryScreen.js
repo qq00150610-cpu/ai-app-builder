@@ -31,26 +31,15 @@ export default function BuildHistoryScreen() {
     setLoading(false);
   };
 
-  const getStatusText = (status) => {
+  const getStatusInfo = (status) => {
     const statusMap = {
-      0: '排队中',
-      1: '编译中',
-      2: '成功',
-      3: '失败',
-      4: '已取消',
+      0: { text: '排队中', color: '#999', bg: '#F5F5F5', icon: '⏳' },
+      1: { text: '编译中', color: '#007AFF', bg: '#E3F2FD', icon: '⚙️' },
+      2: { text: '成功', color: '#34C759', bg: '#E8F5E9', icon: '✅' },
+      3: { text: '失败', color: '#FF3B30', bg: '#FFEBEE', icon: '❌' },
+      4: { text: '已取消', color: '#999', bg: '#F5F5F5', icon: '🚫' },
     };
-    return statusMap[status] || '未知';
-  };
-
-  const getStatusColor = (status) => {
-    const colorMap = {
-      0: '#999',
-      1: '#007AFF',
-      2: '#34C759',
-      3: '#FF3B30',
-      4: '#999',
-    };
-    return colorMap[status] || '#999';
+    return statusMap[status] || { text: '未知', color: '#999', bg: '#F5F5F5', icon: '❓' };
   };
 
   const downloadAPK = async (taskId) => {
@@ -75,39 +64,93 @@ export default function BuildHistoryScreen() {
     }
   };
 
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View style={styles.itemHeader}>
-        <Text style={styles.projectName}>{item.project_name || '未知项目'}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+  const renderItem = ({ item }) => {
+    const statusInfo = getStatusInfo(item.status);
+    return (
+      <View style={styles.itemCard}>
+        <View style={styles.itemHeader}>
+          <View style={styles.projectInfo}>
+            <View style={[styles.projectIcon, { backgroundColor: statusInfo.bg }]}>
+              <Text style={styles.projectIconText}>{statusInfo.icon}</Text>
+            </View>
+            <View>
+              <Text style={styles.projectName}>{item.project_name || '未知项目'}</Text>
+              <Text style={styles.buildId}>构建ID: {item.id}</Text>
+            </View>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.bg }]}>
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>
+              {statusInfo.text}
+            </Text>
+          </View>
         </View>
+
+        <View style={styles.timeRow}>
+          <Text style={styles.timeIcon}>🕐</Text>
+          <Text style={styles.timeText}>
+            {new Date(item.created_at).toLocaleString()}
+          </Text>
+        </View>
+
+        {item.status === 2 && item.apk_url && (
+          <TouchableOpacity 
+            style={styles.downloadButton}
+            onPress={() => downloadAPK(item.id)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.downloadIcon}>📥</Text>
+            <Text style={styles.downloadText}>下载APK</Text>
+          </TouchableOpacity>
+        )}
+
+        {item.status === 3 && item.error_msg && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>❗ 错误信息</Text>
+            <Text style={styles.errorMsg}>{item.error_msg}</Text>
+          </View>
+        )}
+
+        {(item.status === 0 || item.status === 1) && (
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={() => refreshStatus(item.id)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.refreshIcon}>🔄</Text>
+            <Text style={styles.refreshText}>刷新状态</Text>
+          </TouchableOpacity>
+        )}
       </View>
+    );
+  };
 
-      <Text style={styles.time}>
-        {new Date(item.created_at).toLocaleString()}
-      </Text>
-
-      {item.status === 2 && item.apk_url && (
-        <TouchableOpacity style={styles.downloadButton} onPress={() => downloadAPK(item.id)}>
-          <Text style={styles.downloadButtonText}>下载APK</Text>
-        </TouchableOpacity>
-      )}
-
-      {item.status === 3 && item.error_msg && (
-        <Text style={styles.errorMsg}>错误: {item.error_msg}</Text>
-      )}
-
-      {(item.status === 0 || item.status === 1) && (
-        <TouchableOpacity style={styles.refreshButton} onPress={() => refreshStatus(item.id)}>
-          <Text style={styles.refreshButtonText}>刷新状态</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  // 统计数据
+  const stats = {
+    total: tasks.length,
+    success: tasks.filter(t => t.status === 2).length,
+    failed: tasks.filter(t => t.status === 3).length,
+  };
 
   return (
     <View style={styles.container}>
+      {/* 统计卡片 */}
+      <View style={styles.statsCard}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{stats.total}</Text>
+          <Text style={styles.statLabel}>总构建</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: '#34C759' }]}>{stats.success}</Text>
+          <Text style={styles.statLabel}>成功</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={[styles.statValue, { color: '#FF3B30' }]}>{stats.failed}</Text>
+          <Text style={styles.statLabel}>失败</Text>
+        </View>
+      </View>
+
       <FlatList
         data={tasks}
         renderItem={renderItem}
@@ -115,9 +158,15 @@ export default function BuildHistoryScreen() {
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={loadTasks} />
         }
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>暂无构建记录</Text>
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIcon}>
+              <Text style={styles.emptyEmoji}>📦</Text>
+            </View>
+            <Text style={styles.emptyTitle}>暂无构建记录</Text>
+            <Text style={styles.emptyText}>去创建应用并打包吧！</Text>
           </View>
         }
       />
@@ -128,74 +177,185 @@ export default function BuildHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8F9FE',
   },
-  item: {
+  statsCard: {
+    flexDirection: 'row',
     backgroundColor: '#fff',
+    margin: 16,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#667eea',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#999',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#f0f0f0',
+  },
+  listContent: {
+    padding: 16,
+    paddingTop: 0,
+    paddingBottom: 100,
+  },
+  itemCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  projectInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  projectIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  projectIconText: {
+    fontSize: 22,
   },
   projectName: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+    marginBottom: 2,
+  },
+  buildId: {
+    fontSize: 12,
+    color: '#ccc',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   statusText: {
-    fontSize: 12,
-    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
   },
-  time: {
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  timeIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  timeText: {
     fontSize: 13,
     color: '#999',
-    marginBottom: 8,
   },
   downloadButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 10,
-    borderRadius: 6,
+    flexDirection: 'row',
+    backgroundColor: '#667eea',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  downloadButtonText: {
+  downloadIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  downloadText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   refreshButton: {
-    backgroundColor: '#f0f0f0',
-    paddingVertical: 10,
-    borderRadius: 6,
+    flexDirection: 'row',
+    backgroundColor: '#F0F0F0',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  refreshButtonText: {
+  refreshIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  refreshText: {
     color: '#666',
     fontSize: 14,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    borderRadius: 10,
+    padding: 12,
+  },
+  errorTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FF3B30',
+    marginBottom: 6,
   },
   errorMsg: {
     fontSize: 13,
-    color: '#FF3B30',
-    backgroundColor: '#FFF5F5',
-    padding: 8,
-    borderRadius: 4,
+    color: '#666',
+    lineHeight: 20,
   },
-  empty: {
-    flex: 1,
+  emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 100,
+    paddingTop: 80,
+    paddingHorizontal: 40,
+  },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  emptyEmoji: {
+    fontSize: 48,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#999',
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
